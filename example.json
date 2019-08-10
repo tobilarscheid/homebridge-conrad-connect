@@ -1,0 +1,77 @@
+[
+  {
+    "id": "5c408558aa0c13f2c5debcfa",
+    "name": "Light 1",
+    "metadata": {
+      "id": "wiz.light",
+      "types": [
+        "lamp"
+      ],
+      "properties": [
+        {
+          "name": "on_off",
+          "type": "Boolean",
+          "readable": true,
+          "writable": true
+        },
+        {
+          "name": "brightness",
+          "type": "Number",
+          "unit": "percent",
+          "readable": false,
+          "writable": true
+        },
+        {
+          "name": "color",
+          "type": "String",
+          "unit": "hexRGB",
+          "readable": false,
+          "writable": true
+        }
+      ],
+      "events": []
+    }
+  },
+  {
+    "id": "5c4070a3aa0c13f2c5debcf9",
+    "name": "Lock Office",
+    "metadata": {
+      "id": "nuki.lock",
+      "types": [
+        "doorlock"
+      ],
+      "properties": [
+        {
+          "name": "locked",
+          "type": "Boolean",
+          "readable": false,
+          "writable": true
+        }
+      ],
+      "events": []
+    }
+  },
+  {
+    "id": "5c4b36675dfa2be825e7707c",
+    "name": "Fenster- und Türkontakt",
+    "metadata": {
+      "id": "homematic.eQ3.WindowSensor",
+      "types": [
+        "contactSensor"
+      ],
+      "properties": [],
+      "events": [
+        {
+          "name": "stateChange",
+          "value": {
+            "type": "Enum",
+            "enumValues": [
+              "open",
+              "closed"
+            ]
+          }
+        }
+      ]
+    }
+  }
+]
