@@ -1,0 +1,23 @@
+{
+  "name": "homebridge-conrad-connect",
+  "version": "0.0.1",
+  "description": "Homebridge plugin to connect your conrad-connect devices to your iOS homekit.",
+  "license": "MIT",
+  "keywords": [
+    "homebridge-plugin"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/tobilarscheid/homebridge-conrad-connect"
+  },
+  "bugs": {
+    "url": "https://github.com/tobilarscheid/homebridge-conrad-connect/issues"
+  },
+  "engines": {
+    "node": ">=0.12.0",
+    "homebridge": ">=0.2.0"
+  },
+  "dependencies": {
+    "request": "^2.87.0"
+  }
+}
