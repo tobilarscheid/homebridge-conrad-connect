@@ -3,6 +3,8 @@ var request = require('request');
 var Accessory, Service, Characteristic, UUIDGen;
 
 module.exports = function (homebridge) {
+  console.log("homebridge API version: " + homebridge.version);
+
   // Accessory must be created from PlatformAccessory Constructor
   Accessory = homebridge.platformAccessory;
 
@@ -24,42 +26,64 @@ function ConradConnect(log, config, api) {
   this.log = log;
   this.config = config;
   this.accessoriesList = [];
-  if (api) {
-    // Save the API object as plugin needs to register new accessory via this object
-    this.api = api;
+  this.api = api;
 
+  if (api) {
     // Listen to event "didFinishLaunching", this means homebridge already finished loading cached accessories.
     // Platform Plugin should only register new accessory that doesn't exist in homebridge after this event.
     // Or start discover new accessories.
     this.api.on('didFinishLaunching', function () {
       platform.log("DidFinishLaunching");
       log("ConradConnect Init");
-      setInterval(function () {
-        var url = platform.config.postUrl;
-        request.post(platform.config.postUrl, {
-          json: {
-            bearerToken: platform.config.bearerToken,
-            body: {
-              action: "get"
-            }
-          }
-        }, (error, res, body) => {
-          if (error) {
-            platform.log(error)
-            platform.log(`statusCode: ${res.statusCode}`)
-            platform.log(body)
-          }
-          var devices = JSON.parse(body);
-          devices.forEach(device => {
-            platform.addAccessory(device)
-          });
-        })
-      }, 30000, platform);
+      setInterval(this.fetchDevices.bind(this), 1000)
     }.bind(this));
   } else {
     log("ConradConnect Init");
-    setInterval(this.getDevices, 1000, platform);
+    setInterval(this.fetchDevices.bind(this), 1000)
   }
+
+}
+
+ConradConnect.prototype.fetchDevices = function () {
+  var platform = this;
+
+  // var url = platform.config.postUrl;
+  // request.post(platform.config.postUrl, {
+  //   json: {
+  //     bearerToken: platform.config.bearerToken,
+  //     body: {
+  //       action: "get"
+  //     }
+  //   }
+  // }, (error, res, body) => {
+  //   if (error) {
+  //     platform.log(error)
+  //     platform.log(`statusCode: ${res.statusCode}`)
+  //     platform.log(body)
+  //     return;
+  //   }
+  //   var devices = JSON.parse(body);
+  //   devices.forEach(device => {
+  //     platform.addAccessory(device)
+  //   });
+  // });
+
+  var devices = JSON.parse('[{"id":"5c408558aa0c13f2c5debcfa","name":"Light1","metadata":{"id":"wiz.light","types":["lamp"],"properties":[{"name":"on_off","type":"Boolean","readable":true,"writable":true},{"name":"brightness","type":"Number","unit":"percent","readable":false,"writable":true},{"name":"color","type":"String","unit":"hexRGB","readable":false,"writable":true}],"events":[]}},{"id":"5c4070a3aa0c13f2c5debcf9","name":"LockOffice","metadata":{"id":"nuki.lock","types":["doorlock"],"properties":[{"name":"locked","type":"Boolean","readable":false,"writable":true}],"events":[]}},{"id":"5c4b36675dfa2be825e7707c","name":"Fenster-undTürkontakt","metadata":{"id":"homematic.eQ3.WindowSensor","types":["contactSensor"],"properties":[],"events":[{"name":"stateChange","value":{"type":"Enum","enumValues":["open","closed"]}}]}}]');
+
+  devices.forEach(device => {
+    platform.addAccessory(device)
+  });
+
+  platform.log(platform.accessoriesList.length)
+
+  var deletedAccessories = platform.accessoriesList.filter(
+    localAccessory =>
+      devices.findIndex(fetchedAccessory =>
+        fetchedAccessory.id == localAccessory.context.idFromConrad)
+      == -1
+  ); //device in local cache is not in fetched list from server
+
+  platform.removeAccessories(deletedAccessories);
 }
 
 ConradConnect.prototype.accessories = function (callback) {
@@ -78,58 +102,17 @@ ConradConnect.prototype.configureAccessory = function (accessory) {
   // accessory.updateReachability()
   accessory.reachable = true;
 
-  accessory.on('identify', function (paired, callback) {
-    platform.log(accessory.displayName, "Identify!");
-    callback();
-  });
+  var ctx = { platform: this, accessory: accessory };
 
   if (accessory.getService(Service.Lightbulb)) {
     accessory.getService(Service.Lightbulb)
-    .getCharacteristic(Characteristic.On)
-    .on('set', function (value, callback) {
-      request.post(platform.config.postUrl, {
-        json: {
-          bearerToken: platform.config.bearerToken,
-          body: {
-            action: "actuate",
-            device: newAccessory.context.idFromConrad,
-            property: "on_off",
-            value: value
-          }
-        }
-      }, (error, res, body) => {
-        if (error) {
-          platform.log(error)
-          platform.log(`statusCode: ${res.statusCode}`)
-          platform.log(body)
-          return
-        }
-      });
-      callback();
-    });
+      .getCharacteristic(Characteristic.On)
+      .on('set', this.lighbulbOnSet.bind(ctx));
   }
 
   this.accessoriesList.push(accessory);
 }
 
-ConradConnect.prototype.getDevices = function (platform) {
-  // platform.log(platform.config.postUrl);
-  // var url = platform.config.postUrl;
-  // request(url, function (error, response, body) {
-  //   platform.log('error:', error); // Print the error if one occurred
-  //   platform.log('statusCode:', response && response.statusCode); // Print the response status code if a response was received
-  //   var devices = JSON.parse(body)
-  //   platform.log(devices)
-
-  // });
-  var devices = JSON.parse('[{"id":"5c408558aa0c13f2c5debcfa","name":"Light1","metadata":{"id":"wiz.light","types":["lamp"],"properties":[{"name":"on_off","type":"Boolean","readable":true,"writable":true},{"name":"brightness","type":"Number","unit":"percent","readable":false,"writable":true},{"name":"color","type":"String","unit":"hexRGB","readable":false,"writable":true}],"events":[]}},{"id":"5c4070a3aa0c13f2c5debcf9","name":"LockOffice","metadata":{"id":"nuki.lock","types":["doorlock"],"properties":[{"name":"locked","type":"Boolean","readable":false,"writable":true}],"events":[]}},{"id":"5c4b36675dfa2be825e7707c","name":"Fenster-undTürkontakt","metadata":{"id":"homematic.eQ3.WindowSensor","types":["contactSensor"],"properties":[],"events":[{"name":"stateChange","value":{"type":"Enum","enumValues":["open","closed"]}}]}}]');
-
-  devices.forEach(device => {
-    platform.addAccessory(device)
-  });
-}
-
-// Sample function to show how developer can add accessory dynamically from outside event
 ConradConnect.prototype.addAccessory = function (device) {
   var platform = this;
   var uuid;
@@ -137,10 +120,7 @@ ConradConnect.prototype.addAccessory = function (device) {
   uuid = UUIDGen.generate(device.name);
 
   var newAccessory = new Accessory(device.name, uuid);
-  newAccessory.on('identify', function (paired, callback) {
-    platform.log(newAccessory.displayName, "Identify!");
-    callback();
-  });
+  
   // Plugin can save context on accessory to help restore accessory in configureAccessory()
   newAccessory.context.idFromConrad = device.id
 
@@ -154,39 +134,44 @@ ConradConnect.prototype.addAccessory = function (device) {
     return;
   }
 
-  // Make sure you provided a name for service, otherwise it may not visible in some HomeKit apps
+  var ctx = { platform: this, accessory: newAccessory };
   newAccessory.addService(Service.Lightbulb, device.name)
     .getCharacteristic(Characteristic.On)
-    .on('set', function (value, callback) {
-      request.post(platform.config.postUrl, {
-        json: {
-          bearerToken: platform.config.bearerToken,
-          body: {
-            action: "actuate",
-            device: newAccessory.context.idFromConrad,
-            property: "on_off",
-            value: value
-          }
-        }
-      }, (error, res, body) => {
-        if (error) {
-          platform.log(error)
-          platform.log(`statusCode: ${res.statusCode}`)
-          platform.log(body)
-          return
-        }
-      });
-      callback();
-    });
+    .on('set', this.lighbulbOnSet.bind(ctx));
 
   this.accessoriesList.push(newAccessory);
   this.api.registerPlatformAccessories("homebridge-conrad-connect", "ConradConnect", [newAccessory]);
 }
 
-// Sample function to show how developer can remove accessory dynamically from outside event
-ConradConnect.prototype.removeAccessory = function () {
-  this.log("Remove Accessory");
-  this.api.unregisterPlatformAccessories("homebridge-conrad-connect", "ConradConnect", this.accessoriesList);
+ConradConnect.prototype.lighbulbOnSet = function (value, callback) {
+  var platform = this.platform;
+  var accessory = this.accessory;
 
-  this.accessoriesList = [];
+  platform.log(`setting value to ${value}`);
+  request.post(platform.config.postUrl, {
+    json: {
+      bearerToken: platform.config.bearerToken,
+      body: {
+        action: "actuate",
+        device: accessory.context.idFromConrad,
+        property: "on_off",
+        value: value
+      }
+    }
+  }, (error, res, body) => {
+    if (error) {
+      platform.log(error)
+      platform.log(`statusCode: ${res.statusCode}`)
+      platform.log(body)
+      return
+    }
+  });
+  callback();
+}
+
+ConradConnect.prototype.removeAccessories = function (accessories) {
+  accessories.forEach(accessory => {
+    this.api.unregisterPlatformAccessories("homebridge-conrad-connect", "ConradConnect", [accessory]);
+    this.accessoriesList.splice(this.accessoriesList.indexOf(accessory), 1);
+  });
 }
