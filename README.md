@@ -1,30 +1,19 @@
 # homebridge-conrad-connect
 
-This plugin makes all devices in your conradconnect.de account available in homekit on your iOS device. Currently restricted to lamps.
+This plugin makes all devices in your [Conrad Connect](conradconnect.de) account available in HomeKit on your iOS device. Currently restricted to lamps.
 
 --> BILD
 
 ## Setup
 
-1. Install `homebridge-conrad-connect` like you would install any other homebridge plugin:
+1. Install `homebridge-conrad-connect` like you would install any other Homebridge plugin:
 
 ```shell
 npm install -g homebridge-conrad-connect
 ```
 
-2. Go to conrad connect, install the homebridge-connector (LINK) service and click configure to retrieve `API url` and `bearer token`. These values are needed so homebridge can access your conrad connect account.
+2. Go to Conrad Connect, install the homebridge-connector (LINK) service and click configure to retrieve your configuration.
 
-BILD?
+![](screenshots/Configuration.png)
 
-3. Enter the values you just retrieved into your `config.json`, following the format given in [`config-sample.json`](config-sample.json):
-
-```json
- "platforms": [
-        {
-            "platform": "conrad-connect-platform",
-            "name": "conrad-connect",
-            "bearerToken": "TOKEN-YOU-JUST-RETRIEVED",
-            "postUrl": "URL-YOU-JUST-RETRIEVED"
-        }
-    ]
-```
+3. Enter the values you just retrieved into your `config.json`.
