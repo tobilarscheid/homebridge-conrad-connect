@@ -74,8 +74,6 @@ ConradConnect.prototype.fetchDevices = function () {
     platform.addAccessory(device)
   });
 
-  platform.log(platform.accessoriesList.length)
-
   var deletedAccessories = platform.accessoriesList.filter(
     localAccessory =>
       devices.findIndex(fetchedAccessory =>
@@ -140,7 +138,7 @@ ConradConnect.prototype.addAccessory = function (device) {
     .on('set', this.lighbulbOnSet.bind(ctx));
 
   this.accessoriesList.push(newAccessory);
-  this.api.registerPlatformAccessories("homebridge-conrad-connect", "ConradConnect", [newAccessory]);
+  this.api.registerPlatformAccessories("homebridge-conrad-connect", "conrad-connect-platform", [newAccessory]);
 }
 
 ConradConnect.prototype.lighbulbOnSet = function (value, callback) {
@@ -171,7 +169,7 @@ ConradConnect.prototype.lighbulbOnSet = function (value, callback) {
 
 ConradConnect.prototype.removeAccessories = function (accessories) {
   accessories.forEach(accessory => {
-    this.api.unregisterPlatformAccessories("homebridge-conrad-connect", "ConradConnect", [accessory]);
+    this.api.unregisterPlatformAccessories("homebridge-conrad-connect", "conrad-connect-platform", [accessory]);
     this.accessoriesList.splice(this.accessoriesList.indexOf(accessory), 1);
   });
 }
