@@ -50,7 +50,7 @@ ConradConnect.prototype.fetchDevices = function () {
   var url = platform.config.postUrl;
   request.post(platform.config.postUrl, {
     json: {
-        action: "get"
+      action: "get"
     },
     headers: {
       'Authorization': `Bearer ${platform.config.bearerToken}`
@@ -69,10 +69,10 @@ ConradConnect.prototype.fetchDevices = function () {
     });
 
     var deletedAccessories = platform.accessoriesList.filter(
-    localAccessory =>
-      devices.findIndex(fetchedAccessory =>
-        fetchedAccessory.id == localAccessory.context.idFromConrad)
-      == -1
+      localAccessory =>
+        devices.findIndex(fetchedAccessory =>
+          fetchedAccessory.id == localAccessory.context.idFromConrad)
+        == -1
     ); //device in local cache is not in fetched list from server
 
     platform.removeAccessories(deletedAccessories);
@@ -115,7 +115,11 @@ ConradConnect.prototype.configureAccessory = function (accessory) {
   if (accessory.getService(Service.Lightbulb)) {
     accessory.getService(Service.Lightbulb)
       .getCharacteristic(Characteristic.On)
-      .on('set', this.lighbulbOnSet.bind(ctx));
+      .on('set', this.lighbulbOnSetOnOff.bind(ctx));
+
+    accessory.getService(Service.Lightbulb)
+      .getCharacteristic(Characteristic.Brightness)
+      .on('set', this.lighbulbOnSetBrightness.bind(ctx));
   }
 
   this.accessoriesList.push(accessory);
@@ -128,7 +132,7 @@ ConradConnect.prototype.addAccessory = function (device) {
   uuid = UUIDGen.generate(device.name);
 
   var newAccessory = new Accessory(device.name, uuid);
-  
+
   // Plugin can save context on accessory to help restore accessory in configureAccessory()
   newAccessory.context.idFromConrad = device.id
 
@@ -145,26 +149,55 @@ ConradConnect.prototype.addAccessory = function (device) {
   var ctx = { platform: this, accessory: newAccessory };
   newAccessory.addService(Service.Lightbulb, device.name)
     .getCharacteristic(Characteristic.On)
-    .on('set', this.lighbulbOnSet.bind(ctx));
+    .on('set', this.lighbulbOnSetOnOff.bind(ctx))
+  newAccessory.getService(Service.Lightbulb)
+    .addCharacteristic(Characteristic.Brightness)
+    .on('set', this.lighbulbOnSetBrightness.bind(ctx));
 
   this.accessoriesList.push(newAccessory);
   this.api.registerPlatformAccessories("homebridge-conrad-connect", "conrad-connect-platform", [newAccessory]);
 }
 
-ConradConnect.prototype.lighbulbOnSet = function (value, callback) {
+ConradConnect.prototype.lighbulbOnSetOnOff = function (value, callback) {
   var platform = this.platform;
   var accessory = this.accessory;
 
-  platform.log(`setting value to ${value}`);
+  platform.log(`setting value to ${value} for device ${accessory.context.idFromConrad}`);
   request.post(platform.config.postUrl, {
     json: {
-      bearerToken: platform.config.bearerToken,
-      body: {
-        action: "actuate",
-        device: accessory.context.idFromConrad,
-        property: "on_off",
-        value: value
-      }
+      action: "actuate",
+      device: accessory.context.idFromConrad,
+      property: "on_off",
+      value: value
+    },
+    headers: {
+      'Authorization': `Bearer ${platform.config.bearerToken}`
+    }
+  }, (error, res, body) => {
+    if (error) {
+      platform.log(error)
+      platform.log(`statusCode: ${res.statusCode}`)
+      platform.log(body)
+      return
+    }
+  });
+  callback();
+}
+
+ConradConnect.prototype.lighbulbOnSetBrightness = function (value, callback) {
+  var platform = this.platform;
+  var accessory = this.accessory;
+
+  platform.log(`setting value to ${value} ${value / 100 * 255} for device ${accessory.context.idFromConrad}`);
+  request.post(platform.config.postUrl, {
+    json: {
+      action: "actuate",
+      device: accessory.context.idFromConrad,
+      property: "brightness",
+      value: value / 100 * 255
+    },
+    headers: {
+      'Authorization': `Bearer ${platform.config.bearerToken}`
     }
   }, (error, res, body) => {
     if (error) {
