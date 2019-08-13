@@ -47,41 +47,51 @@ function ConradConnect(log, config, api) {
 ConradConnect.prototype.fetchDevices = function () {
   var platform = this;
 
-  // var url = platform.config.postUrl;
-  // request.post(platform.config.postUrl, {
-  //   json: {
-  //     bearerToken: platform.config.bearerToken,
-  //     body: {
-  //       action: "get"
-  //     }
-  //   }
-  // }, (error, res, body) => {
-  //   if (error) {
-  //     platform.log(error)
-  //     platform.log(`statusCode: ${res.statusCode}`)
-  //     platform.log(body)
-  //     return;
-  //   }
-  //   var devices = JSON.parse(body);
-  //   devices.forEach(device => {
-  //     platform.addAccessory(device)
-  //   });
-  // });
+  var url = platform.config.postUrl;
+  request.post(platform.config.postUrl, {
+    json: {
+        action: "get"
+    },
+    headers: {
+      'Authorization': `Bearer ${platform.config.bearerToken}`
+    }
+  }, (error, res, body) => {
+    if (error) {
+      platform.log(error)
+      platform.log(`statusCode: ${res.statusCode}`)
+      platform.log(body)
+      return;
+    }
+    var devices = body.result;
 
-  var devices = JSON.parse('[{"id":"5c408558aa0c13f2c5debcfa","name":"Light1","metadata":{"id":"wiz.light","types":["lamp"],"properties":[{"name":"on_off","type":"Boolean","readable":true,"writable":true},{"name":"brightness","type":"Number","unit":"percent","readable":false,"writable":true},{"name":"color","type":"String","unit":"hexRGB","readable":false,"writable":true}],"events":[]}},{"id":"5c4070a3aa0c13f2c5debcf9","name":"LockOffice","metadata":{"id":"nuki.lock","types":["doorlock"],"properties":[{"name":"locked","type":"Boolean","readable":false,"writable":true}],"events":[]}},{"id":"5c4b36675dfa2be825e7707c","name":"Fenster-undTürkontakt","metadata":{"id":"homematic.eQ3.WindowSensor","types":["contactSensor"],"properties":[],"events":[{"name":"stateChange","value":{"type":"Enum","enumValues":["open","closed"]}}]}}]');
+    devices.forEach(device => {
+      platform.addAccessory(device)
+    });
 
-  devices.forEach(device => {
-    platform.addAccessory(device)
-  });
-
-  var deletedAccessories = platform.accessoriesList.filter(
+    var deletedAccessories = platform.accessoriesList.filter(
     localAccessory =>
       devices.findIndex(fetchedAccessory =>
         fetchedAccessory.id == localAccessory.context.idFromConrad)
       == -1
-  ); //device in local cache is not in fetched list from server
+    ); //device in local cache is not in fetched list from server
 
-  platform.removeAccessories(deletedAccessories);
+    platform.removeAccessories(deletedAccessories);
+  });
+
+  // var devices = JSON.parse('[{"id":"5c408558aa0c13f2c5debcfa","name":"Light1","metadata":{"id":"wiz.light","types":["lamp"],"properties":[{"name":"on_off","type":"Boolean","readable":true,"writable":true},{"name":"brightness","type":"Number","unit":"percent","readable":false,"writable":true},{"name":"color","type":"String","unit":"hexRGB","readable":false,"writable":true}],"events":[]}},{"id":"5c4070a3aa0c13f2c5debcf9","name":"LockOffice","metadata":{"id":"nuki.lock","types":["doorlock"],"properties":[{"name":"locked","type":"Boolean","readable":false,"writable":true}],"events":[]}},{"id":"5c4b36675dfa2be825e7707c","name":"Fenster-undTürkontakt","metadata":{"id":"homematic.eQ3.WindowSensor","types":["contactSensor"],"properties":[],"events":[{"name":"stateChange","value":{"type":"Enum","enumValues":["open","closed"]}}]}}]');
+
+  // devices.forEach(device => {
+  //   platform.addAccessory(device)
+  // });
+
+  // var deletedAccessories = platform.accessoriesList.filter(
+  //   localAccessory =>
+  //     devices.findIndex(fetchedAccessory =>
+  //       fetchedAccessory.id == localAccessory.context.idFromConrad)
+  //     == -1
+  // ); //device in local cache is not in fetched list from server
+
+  // platform.removeAccessories(deletedAccessories);
 }
 
 ConradConnect.prototype.accessories = function (callback) {
