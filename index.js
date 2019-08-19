@@ -1,5 +1,6 @@
 var http = require('http');
 var request = require('request');
+var light = require('./light.js')
 var Accessory, Service, Characteristic, UUIDGen;
 
 module.exports = function (homebridge) {
@@ -110,35 +111,17 @@ ConradConnect.prototype.configureAccessory = function (accessory) {
   // accessory.updateReachability()
   accessory.reachable = true;
 
-  var ctx = { platform: this, accessory: accessory };
-
-  if (accessory.getService(Service.Lightbulb)) {
-    accessory.getService(Service.Lightbulb)
-      .getCharacteristic(Characteristic.On)
-      .on('set', this.lighbulbOnSetOnOff.bind(ctx));
-
-    accessory.getService(Service.Lightbulb)
-      .getCharacteristic(Characteristic.Brightness)
-      .on('set', this.lighbulbOnSetBrightness.bind(ctx));
-  }
+  this.getAccessoryBuilder(accessory.context.type).configureCharacteristics(accessory, platform, Service, Characteristic);
 
   this.accessoriesList.push(accessory);
 }
 
 ConradConnect.prototype.addAccessory = function (device) {
   var platform = this;
-  var uuid;
-
-  uuid = UUIDGen.generate(device.name);
-
-  var newAccessory = new Accessory(device.name, uuid);
-
-  // Plugin can save context on accessory to help restore accessory in configureAccessory()
-  newAccessory.context.idFromConrad = device.id
-
+  
   var existing = false;
   this.accessoriesList.forEach(existingDevice => {
-    if (existingDevice.context.idFromConrad == newAccessory.context.idFromConrad) {
+    if (existingDevice.context.idFromConrad == device.id) {
       existing = true;
     }
   })
@@ -146,68 +129,22 @@ ConradConnect.prototype.addAccessory = function (device) {
     return;
   }
 
-  var ctx = { platform: this, accessory: newAccessory };
-  newAccessory.addService(Service.Lightbulb, device.name)
-    .getCharacteristic(Characteristic.On)
-    .on('set', this.lighbulbOnSetOnOff.bind(ctx))
-  newAccessory.getService(Service.Lightbulb)
-    .addCharacteristic(Characteristic.Brightness)
-    .on('set', this.lighbulbOnSetBrightness.bind(ctx));
+  var builder = this.getAccessoryBuilder(device.metadata.types.join(''))
+
+  var newAccessory = builder.createAccessory(device, UUIDGen, Accessory, Service)
+  builder.configureCharacteristics(newAccessory, platform, Service, Characteristic)
 
   this.accessoriesList.push(newAccessory);
   this.api.registerPlatformAccessories("homebridge-conrad-connect", "conrad-connect-platform", [newAccessory]);
 }
 
-ConradConnect.prototype.lighbulbOnSetOnOff = function (value, callback) {
-  var platform = this.platform;
-  var accessory = this.accessory;
-
-  platform.log(`setting value to ${value} for device ${accessory.context.idFromConrad}`);
-  request.post(platform.config.postUrl, {
-    json: {
-      action: "actuate",
-      device: accessory.context.idFromConrad,
-      property: "on_off",
-      value: value
-    },
-    headers: {
-      'Authorization': `Bearer ${platform.config.bearerToken}`
-    }
-  }, (error, res, body) => {
-    if (error) {
-      platform.log(error)
-      platform.log(`statusCode: ${res.statusCode}`)
-      platform.log(body)
-      return
-    }
-  });
-  callback();
-}
-
-ConradConnect.prototype.lighbulbOnSetBrightness = function (value, callback) {
-  var platform = this.platform;
-  var accessory = this.accessory;
-
-  platform.log(`setting value to ${value} ${value / 100 * 255} for device ${accessory.context.idFromConrad}`);
-  request.post(platform.config.postUrl, {
-    json: {
-      action: "actuate",
-      device: accessory.context.idFromConrad,
-      property: "brightness",
-      value: value / 100 * 255
-    },
-    headers: {
-      'Authorization': `Bearer ${platform.config.bearerToken}`
-    }
-  }, (error, res, body) => {
-    if (error) {
-      platform.log(error)
-      platform.log(`statusCode: ${res.statusCode}`)
-      platform.log(body)
-      return
-    }
-  });
-  callback();
+ConradConnect.prototype.getAccessoryBuilder = function (accessoryType) {
+  switch (accessoryType) {
+    case "lamp":
+      return light.builder;
+    default:
+      this.log(`Ignoring unknown accessory type ${accessoryType}`);
+  }
 }
 
 ConradConnect.prototype.removeAccessories = function (accessories) {
