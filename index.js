@@ -111,7 +111,7 @@ ConradConnect.prototype.configureAccessory = function (accessory) {
   // accessory.updateReachability()
   accessory.reachable = true;
 
-  this.getAccessoryBuilder(accessory.context.type).configureCharacteristics(accessory, platform, Service, Characteristic);
+  this.getAccessoryBuilder(accessory.context.type).configureCharacteristics(accessory);
 
   this.accessoriesList.push(accessory);
 }
@@ -131,19 +131,21 @@ ConradConnect.prototype.addAccessory = function (device) {
 
   var builder = this.getAccessoryBuilder(device.metadata.types.join(''))
 
-  var newAccessory = builder.createAccessory(device, UUIDGen, Accessory, Service)
-  builder.configureCharacteristics(newAccessory, platform, Service, Characteristic)
+  var newAccessory = builder.createAccessory(device)
+  builder.configureCharacteristics(newAccessory)
 
   this.accessoriesList.push(newAccessory);
   this.api.registerPlatformAccessories("homebridge-conrad-connect", "conrad-connect-platform", [newAccessory]);
 }
 
 ConradConnect.prototype.getAccessoryBuilder = function (accessoryType) {
+  var platform = this;
+
   switch (accessoryType) {
     case "lamp":
-      return light.builder;
+      return light.builder(Accessory, Service, Characteristic, UUIDGen, platform);
     default:
-      this.log(`Ignoring unknown accessory type ${accessoryType}`);
+      platform.log(`Ignoring unknown accessory type ${accessoryType}`);
   }
 }
 
