@@ -3,6 +3,7 @@ module.exports.createAccessory = function (device, UUIDGen, Accessory) {
     var newAccessory = new Accessory(device.name, uuid);
     newAccessory.context.idFromConrad = device.id
     newAccessory.context.type = device.metadata.types.join('');
+    newAccessory.context.characteristics = device.metadata.properties;
     return newAccessory;
 }
 
@@ -12,4 +13,31 @@ module.exports.getOrAddCharacteristic = function(service, characteristic) {
         result = service.addCharacteristic(characteristic);
     }
     return result;
+}
+
+module.exports.getStatus = function (callback) {
+    var platform = this.platform;
+    var accessory = this.accessory;
+    var property = this.property;
+
+    platform.log(`getting value for device ${accessory.context.idFromConrad}`);
+    request.post(platform.config.postUrl, {
+        json: {
+            action: "status",
+            device: accessory.context.idFromConrad,
+            property: property
+        },
+        headers: {
+            'Authorization': `Bearer ${platform.config.bearerToken}`
+        }
+    }, (error, res, body) => {
+        if (error) {
+            platform.log(error)
+            platform.log(`statusCode: ${res.statusCode}`)
+            platform.log(body)
+            callback(error);
+            return
+        }
+        callback(null, body.result.value);
+    });
 }

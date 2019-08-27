@@ -1,6 +1,8 @@
 var http = require('http');
 var request = require('request');
-var light = require('./light.js')
+var light = require('./light.js');
+var plug = require('./plug.js');
+var thermostat = require('./thermostat.js');
 var Accessory, Service, Characteristic, UUIDGen;
 
 module.exports = function (homebridge) {
@@ -118,7 +120,7 @@ ConradConnect.prototype.configureAccessory = function (accessory) {
 
 ConradConnect.prototype.addAccessory = function (device) {
   var platform = this;
-  
+
   var existing = false;
   this.accessoriesList.forEach(existingDevice => {
     if (existingDevice.context.idFromConrad == device.id) {
@@ -144,6 +146,10 @@ ConradConnect.prototype.getAccessoryBuilder = function (accessoryType) {
   switch (accessoryType) {
     case "lamp":
       return light.builder(Accessory, Service, Characteristic, UUIDGen, platform);
+    case "thermostat":
+      return thermostat.builder(Accessory, Service, Characteristic, UUIDGen, platform);
+    case "plug":
+      return plug.builder(Accessory, Service, Characteristic, UUIDGen, platform);
     default:
       platform.log(`Ignoring unknown accessory type ${accessoryType}`);
   }
