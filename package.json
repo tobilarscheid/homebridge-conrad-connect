@@ -1,6 +1,6 @@
 {
   "name": "homebridge-conrad-connect",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "description": "Homebridge plugin to connect your conrad-connect devices to your iOS homekit.",
   "license": "MIT",
   "keywords": [
