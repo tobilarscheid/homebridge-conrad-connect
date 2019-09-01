@@ -1,6 +1,6 @@
 # homebridge-conrad-connect
 
-This plugin makes all devices in your [Conrad Connect](conradconnect.de) account available and controllable in HomeKit on your iOS device. Currently restricted to lamps.
+This plugin makes all devices in your [Conrad Connect](conradconnect.de) account available and controllable in HomeKit on your iOS device. Currently supports to lamps, plugs and thermostats.
 
 ![](screenshots/Intro.png)
 
