@@ -1,8 +1,10 @@
+var request = require('request');
+
 module.exports.createAccessory = function (device, UUIDGen, Accessory) {
     uuid = UUIDGen.generate(device.name);
     var newAccessory = new Accessory(device.name, uuid);
     newAccessory.context.idFromConrad = device.id
-    newAccessory.context.type = device.metadata.types.join('');
+    newAccessory.context.type = device.metadata.types[0];
     newAccessory.context.characteristics = device.metadata.properties;
     return newAccessory;
 }
@@ -36,8 +38,9 @@ module.exports.getStatus = function (callback) {
             platform.log(`statusCode: ${res.statusCode}`)
             platform.log(body)
             callback(error);
-            return
+            return;
         }
+        console.log('body:', JSON.stringify(body));
         callback(null, body.result.value);
     });
 }

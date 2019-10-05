@@ -11,7 +11,7 @@ module.exports.builder = function (Accessory, Service, Characteristic, UUIDGen, 
             return newAccessory;
         },
         configureCharacteristics: function (accessory) {
-            var service = accessory.getService(Service.Lightbulb)
+            var service = accessory.getService(Service.Outlet)
             accessory.context.characteristics.forEach(c => {
                 switch (c.name) {
                     case "on_off":

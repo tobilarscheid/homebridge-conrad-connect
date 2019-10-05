@@ -38,11 +38,11 @@ function ConradConnect(log, config, api) {
     this.api.on('didFinishLaunching', function () {
       platform.log("DidFinishLaunching");
       log("ConradConnect Init");
-      setInterval(this.fetchDevices.bind(this), 1000)
+      setInterval(this.fetchDevices.bind(this), 10000)
     }.bind(this));
   } else {
     log("ConradConnect Init");
-    setInterval(this.fetchDevices.bind(this), 1000)
+    setInterval(this.fetchDevices.bind(this), 10000)
   }
 
 }
@@ -66,6 +66,7 @@ ConradConnect.prototype.fetchDevices = function () {
       return;
     }
     var devices = body.result;
+    if (!devices) { devices = [] };
 
     devices.forEach(device => {
       platform.addAccessory(device)
@@ -131,7 +132,11 @@ ConradConnect.prototype.addAccessory = function (device) {
     return;
   }
 
-  var builder = this.getAccessoryBuilder(device.metadata.types.join(''))
+  var builder = this.getAccessoryBuilder(device.metadata.types[0])
+
+  if (!builder) {
+    return;
+  }
 
   var newAccessory = builder.createAccessory(device)
   builder.configureCharacteristics(newAccessory)
@@ -142,7 +147,7 @@ ConradConnect.prototype.addAccessory = function (device) {
 
 ConradConnect.prototype.getAccessoryBuilder = function (accessoryType) {
   var platform = this;
-
+  console.log(accessoryType);
   switch (accessoryType) {
     case "lamp":
       return light.builder(Accessory, Service, Characteristic, UUIDGen, platform);

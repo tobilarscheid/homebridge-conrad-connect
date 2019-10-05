@@ -19,7 +19,7 @@ module.exports.builder = function (Accessory, Service, Characteristic, UUIDGen, 
                             util.getOrAddCharacteristic(service, Characteristic.TargetTemperature)
                                 .on('set', module.exports.targetTemperature.bind({ platform: platform, accessory: accessory }));
                         }
-                    case "temperature":
+                    case "temperature_ignored":
                         if (c.readable) {
                             util.getOrAddCharacteristic(service, Characteristic.CurrentTemperature)
                                 .on('get', util.getStatus.bind({ platform: platform, accessory: accessory, property: c.name }));
@@ -28,7 +28,7 @@ module.exports.builder = function (Accessory, Service, Characteristic, UUIDGen, 
                                 .on('get', (callback) => { callback(null, 0); });
                         }
                         break;
-                    case "humidity":
+                    case "humidity_ignored":
                         if (c.readable) {
                             util.getOrAddCharacteristic(service, Characteristic.CurrentRelativeHumidity)
                                 .on('get', util.getStatus.bind({ platform: platform, accessory: accessory, property: c.name }));
