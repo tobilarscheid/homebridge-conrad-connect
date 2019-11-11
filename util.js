@@ -33,14 +33,13 @@ module.exports.getStatus = function (callback) {
             'Authorization': `Bearer ${platform.config.bearerToken}`
         }
     }, (error, res, body) => {
-        if (error) {
+        if (error || !body.result || !body.result.value) {
             platform.log(error)
             platform.log(`statusCode: ${res.statusCode}`)
             platform.log(body)
             callback(error);
             return;
         }
-        console.log('body:', JSON.stringify(body));
         callback(null, body.result.value);
     });
 }
